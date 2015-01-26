@@ -7,6 +7,8 @@
         , dec/1
         , get_term_ucount/0
         , get_term_tcount/0
+        , get_term_score/0
+        , get_sorted_score/0
         , get_terms/0
         , get_pos_terms/0
         , get_neg_terms/0
@@ -35,7 +37,12 @@ handle_call(get_ucount, _From, State)     ->
   Reply = dict:size(State#state.counter),
   {reply, Reply, State};
 handle_call(get_tcount, _From, State)     ->
-  Reply = dict:size(State#state.counter),
+  {reply, total, State};
+handle_call(get_term_score, _From, State) ->
+  Reply = get_count(State),
+  {reply, Reply, State};
+handle_call(get_sorted_term_score, _From, State) ->
+  Reply = get_sorted_score(State),
   {reply, Reply, State};
 handle_call(get_terms, _From, State)      ->
   Reply = dict:to_list(State#state.counter),
@@ -86,6 +93,12 @@ get_term_ucount() ->
 get_term_tcount() ->
   gen_server:call(?SRV_NAME, get_tcount).
 
+get_term_score() ->
+  gen_server:call(?SRV_NAME, get_term_score).
+
+get_sorted_score() ->
+  gen_server:call(?SRV_NAME, get_sorted_term_score).
+
 get_terms() ->
   gen_server:call(?SRV_NAME, get_terms).
 
@@ -109,6 +122,18 @@ get_pos_terms(State) ->
 get_neg_terms(State) ->
   dict:to_list(dict:filter(fun(_K, C) -> C < 0 end,
                            State#state.counter)).
+
+get_count(#state{counter = Dict}) ->
+  dict:fold(fun(_K, V, Acc) -> dict:update_counter(V, 1, Acc) end,
+            dict:new(), Dict).
+
+get_sorted_score(State) ->
+  Dict = get_count(State),
+  Count = lists:sort(dict:to_list(Dict)),
+  [ {n_keys, dict:size(Dict)}
+  , {count,  Count}
+  , {total, State#state.total}
+  ].
 
 %%% Local Variables:
 %%% erlang-indent-level: 2
