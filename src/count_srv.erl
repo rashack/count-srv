@@ -37,7 +37,8 @@ handle_call(get_ucount, _From, State)     ->
   Reply = dict:size(State#state.counter),
   {reply, Reply, State};
 handle_call(get_tcount, _From, State)     ->
-  {reply, total, State};
+  Reply = total_count(State),
+  {reply, Reply, State};
 handle_call(get_term_score, _From, State) ->
   Reply = get_count(State),
   {reply, Reply, State};
@@ -126,6 +127,9 @@ get_neg_terms(State) ->
 get_count(#state{counter = Dict}) ->
   dict:fold(fun(_K, V, Acc) -> dict:update_counter(V, 1, Acc) end,
             dict:new(), Dict).
+
+total_count(#state{total= Total}) ->
+  Total.
 
 get_sorted_score(State) ->
   Dict = get_count(State),
